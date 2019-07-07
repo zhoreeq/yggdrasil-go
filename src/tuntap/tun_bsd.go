@@ -102,7 +102,7 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 	if err != nil {
 		panic(err)
 	}
-	tun.iface = iface
+	tun.iface = []*water.Interface{iface}
 	tun.mtu = getSupportedMTU(mtu)
 	return tun.setupAddress(addr)
 }
