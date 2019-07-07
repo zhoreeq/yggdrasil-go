@@ -7,12 +7,21 @@ import (
 	"time"
 
 	"github.com/songgao/packets/ethernet"
+	"github.com/yggdrasil-network/water"
 	"github.com/yggdrasil-network/yggdrasil-go/src/address"
 	"github.com/yggdrasil-network/yggdrasil-go/src/crypto"
 	"github.com/yggdrasil-network/yggdrasil-go/src/util"
 )
 
-func (tun *TunAdapter) writer() error {
+func (tun *TunAdapter) writer(q int) error {
+	var queue *water.Interface
+	if len(tun.iface) > q {
+		queue = tun.iface[q]
+	}
+	if queue == nil {
+		return errors.New("invalid queue index")
+	}
+	tun.log.Debugln("Starting TUN/TAP queue", q, "writer")
 	var w int
 	var err error
 	for {
@@ -21,7 +30,7 @@ func (tun *TunAdapter) writer() error {
 		if n == 0 {
 			continue
 		}
-		if tun.iface.IsTAP() {
+		if queue.IsTAP() {
 			var dstAddr address.Address
 			if b[0]&0xf0 == 0x60 {
 				if len(b) < 40 {
@@ -69,7 +78,6 @@ func (tun *TunAdapter) writer() error {
 			} else {
 				// Nothing has been discovered, try to discover the destination
 				sendndp(tun.addr)
-
 			}
 			if peerknown {
 				var proto ethernet.Ethertype
@@ -88,12 +96,12 @@ func (tun *TunAdapter) writer() error {
 					len(b))               // Payload length
 				copy(frame[tun_ETHER_HEADER_LENGTH:], b[:n])
 				n += tun_ETHER_HEADER_LENGTH
-				w, err = tun.iface.Write(frame[:n])
+				w, err = queue.Write(frame[:n])
 			} else {
 				tun.log.Errorln("TUN/TAP iface write error: no peer MAC known for", net.IP(dstAddr[:]).String(), "- dropping packet")
 			}
 		} else {
-			w, err = tun.iface.Write(b[:n])
+			w, err = queue.Write(b[:n])
 			util.PutBytes(b)
 		}
 		if err != nil {
@@ -107,14 +115,23 @@ func (tun *TunAdapter) writer() error {
 			tun.log.Errorln("TUN/TAP iface write mismatch:", w, "bytes written vs", n, "bytes given")
 			continue
 		}
+		tun.log.Traceln("Queue", q, "wrote", n, "bytes to TUN/TAP")
 	}
 }
 
-func (tun *TunAdapter) reader() error {
+func (tun *TunAdapter) reader(q int) error {
+	var queue *water.Interface
+	if len(tun.iface) > q {
+		queue = tun.iface[q]
+	}
+	if queue == nil {
+		return errors.New("invalid queue index")
+	}
+	tun.log.Debugln("Starting TUN/TAP queue", q, "reader")
 	bs := make([]byte, 65535)
 	for {
 		// Wait for a packet to be delivered to us through the TUN/TAP adapter
-		n, err := tun.iface.Read(bs)
+		n, err := queue.Read(bs)
 		if err != nil {
 			if !tun.isOpen {
 				return err
@@ -124,10 +141,11 @@ func (tun *TunAdapter) reader() error {
 		if n == 0 {
 			continue
 		}
+		tun.log.Traceln("Queue", q, "read", n, "bytes from TUN/TAP")
 		// If it's a TAP adapter, update the buffer slice so that we no longer
 		// include the ethernet headers
 		offset := 0
-		if tun.iface.IsTAP() {
+		if queue.IsTAP() {
 			// Set our offset to beyond the ethernet headers
 			offset = tun_ETHER_HEADER_LENGTH
 			// If we detect an ICMP packet then hand it to the ICMPv6 module

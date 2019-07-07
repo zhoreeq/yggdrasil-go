@@ -7,6 +7,10 @@ import water "github.com/yggdrasil-network/water"
 // This is to catch unsupported platforms
 // If your platform supports tun devices, you could try configuring it manually
 
+func (tun *TunAdapter) queueCount() int {
+	return 1
+}
+
 // Creates the TUN/TAP adapter, if supported by the Water library. Note that
 // no guarantees are made at this point on an unsupported platform.
 func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int) error {

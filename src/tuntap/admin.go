@@ -19,8 +19,8 @@ func (t *TunAdapter) SetupAdminHandlers(a *admin.AdminSocket) {
 		}()
 
 		return admin.Info{
-			t.iface.Name(): admin.Info{
-				"tap_mode": t.iface.IsTAP(),
+			t.iface[0].Name(): admin.Info{
+				"tap_mode": t.queue().IsTAP(),
 				"mtu":      t.mtu,
 			},
 		}, nil

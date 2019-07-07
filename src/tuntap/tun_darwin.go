@@ -15,6 +15,10 @@ import (
 	water "github.com/yggdrasil-network/water"
 )
 
+func (tun *TunAdapter) queueCount() int {
+	return 1
+}
+
 // Configures the "utun" adapter with the correct IPv6 address and MTU.
 func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int) error {
 	if iftapmode {

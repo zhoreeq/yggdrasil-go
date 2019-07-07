@@ -43,7 +43,8 @@ type TunAdapter struct {
 	ckr          cryptokey
 	icmpv6       ICMPv6
 	mtu          int
-	iface        *water.Interface
+	iface        []*water.Interface
+	ifacec       int
 	send         chan []byte
 	mutex        sync.RWMutex // Protects the below
 	addrToConn   map[address.Address]*tunConn
@@ -64,7 +65,7 @@ func getSupportedMTU(mtu int) int {
 // Name returns the name of the adapter, e.g. "tun0". On Windows, this may
 // return a canonical adapter name instead.
 func (tun *TunAdapter) Name() string {
-	return tun.iface.Name()
+	return tun.iface[0].Name()
 }
 
 // MTU gets the adapter's MTU. This can range between 1280 and 65535, although
@@ -77,7 +78,7 @@ func (tun *TunAdapter) MTU() int {
 // IsTAP returns true if the adapter is a TAP adapter (Layer 2) or false if it
 // is a TUN adapter (Layer 3).
 func (tun *TunAdapter) IsTAP() bool {
-	return tun.iface.IsTAP()
+	return tun.iface[0].IsTAP()
 }
 
 // DefaultName gets the default TUN/TAP interface name for your platform.
@@ -157,8 +158,10 @@ func (tun *TunAdapter) Start() error {
 		}
 	}()
 	go tun.handler()
-	go tun.reader()
-	go tun.writer()
+	for i := 0; i < tun.queueCount(); i++ {
+		go tun.reader(i)
+		go tun.writer(i)
+	}
 	tun.icmpv6.Init(tun)
 	if iftapmode {
 		go tun.icmpv6.Solicit(tun.addr)
@@ -173,7 +176,9 @@ func (tun *TunAdapter) Stop() error {
 	tun.isOpen = false
 	// TODO: we have nothing that cleanly stops all the various goroutines opened
 	// by TUN/TAP, e.g. readers/writers, sessions
-	tun.iface.Close()
+	for i := 0; i < tun.queueCount(); i++ {
+		tun.iface[i].Close()
+	}
 	return nil
 }
 
@@ -262,4 +267,9 @@ func (tun *TunAdapter) wrap(conn *yggdrasil.Conn) (c *tunConn, err error) {
 	go s.checkForTimeouts()
 	// Return
 	return c, err
+}
+
+func (tun *TunAdapter) queue() *water.Interface {
+	tun.ifacec++
+	return tun.iface[tun.ifacec%len(tun.iface)]
 }

@@ -15,6 +15,10 @@ import (
 	"github.com/yggdrasil-network/water"
 )
 
+func (tun *TunAdapter) queueCount() int {
+	return 1
+}
+
 const SIOCSIFADDR_IN6 = (0x80000000) | ((288 & 0x1fff) << 16) | uint32(byte('i'))<<8 | 12
 
 type in6_addrlifetime struct {

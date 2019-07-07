@@ -10,6 +10,10 @@ import (
 
 // This is to catch Windows platforms
 
+func (tun *TunAdapter) queueCount() int {
+	return 1
+}
+
 // Configures the TAP adapter with the correct IPv6 address and MTU. On Windows
 // we don't make use of a direct operating system API to do this - we instead
 // delegate the hard work to "netsh".

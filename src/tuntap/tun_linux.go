@@ -8,11 +8,16 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"runtime"
 
 	"github.com/docker/libcontainer/netlink"
 
 	water "github.com/yggdrasil-network/water"
 )
+
+func (tun *TunAdapter) queueCount() int {
+	return runtime.NumCPU()
+}
 
 // Configures the TAP adapter with the correct IPv6 address and MTU.
 func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int) error {
@@ -22,14 +27,21 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 	} else {
 		config = water.Config{DeviceType: water.TUN}
 	}
-	if ifname != "" && ifname != "auto" {
-		config.Name = ifname
+	config.MultiQueue = true
+	tun.iface = make([]*water.Interface, tun.queueCount())
+	for i := 0; i < tun.queueCount(); i++ {
+		if ifname != "" && ifname != "auto" {
+			config.Name = ifname
+		}
+		iface, err := water.New(config)
+		if err != nil {
+			panic(err)
+		}
+		if config.Name == "" {
+			config.Name = iface.Name()
+		}
+		tun.iface[i] = iface
 	}
-	iface, err := water.New(config)
-	if err != nil {
-		panic(err)
-	}
-	tun.iface = iface
 	tun.mtu = getSupportedMTU(mtu)
 	// The following check is specific to Linux, as the TAP driver only supports
 	// an MTU of 65535-14 to make room for the ethernet headers. This makes sure
@@ -40,7 +52,7 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 		}
 	}
 	// Friendly output
-	tun.log.Infof("Interface name: %s", tun.iface.Name())
+	tun.log.Infof("Interface name: %s", tun.queue().Name())
 	tun.log.Infof("Interface IPv6: %s", addr)
 	tun.log.Infof("Interface MTU: %d", tun.mtu)
 	return tun.setupAddress(addr)
@@ -58,13 +70,13 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 		return err
 	}
 	for _, ifce := range ifces {
-		if ifce.Name == tun.iface.Name() {
+		if ifce.Name == tun.queue().Name() {
 			var newIF = ifce
 			netIF = &newIF // Don't point inside ifces, it's apparently unsafe?...
 		}
 	}
 	if netIF == nil {
-		return errors.New(fmt.Sprintf("Failed to find interface: %s", tun.iface.Name()))
+		return errors.New(fmt.Sprintf("Failed to find interface: %s", tun.queue().Name()))
 	}
 	ip, ipNet, err := net.ParseCIDR(addr)
 	if err != nil {
