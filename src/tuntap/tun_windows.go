@@ -55,14 +55,14 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 	if err != nil {
 		panic(err)
 	}
-	tun.iface = iface
+	tun.iface = []*water.Interface{iface}
 	tun.mtu = getSupportedMTU(mtu)
 	err = tun.setupMTU(tun.mtu)
 	if err != nil {
 		panic(err)
 	}
 	// Friendly output
-	tun.log.Infof("Interface name: %s", tun.iface.Name())
+	tun.log.Infof("Interface name: %s", tun.queue().Name())
 	tun.log.Infof("Interface IPv6: %s", addr)
 	tun.log.Infof("Interface MTU: %d", tun.mtu)
 	return tun.setupAddress(addr)
@@ -72,7 +72,7 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 func (tun *TunAdapter) setupMTU(mtu int) error {
 	// Set MTU
 	cmd := exec.Command("netsh", "interface", "ipv6", "set", "subinterface",
-		fmt.Sprintf("interface=%s", tun.iface.Name()),
+		fmt.Sprintf("interface=%s", tun.queue().Name()),
 		fmt.Sprintf("mtu=%d", mtu),
 		"store=active")
 	tun.log.Debugln("netsh command:", strings.Join(cmd.Args, " "))
@@ -89,7 +89,7 @@ func (tun *TunAdapter) setupMTU(mtu int) error {
 func (tun *TunAdapter) setupAddress(addr string) error {
 	// Set address
 	cmd := exec.Command("netsh", "interface", "ipv6", "add", "address",
-		fmt.Sprintf("interface=%s", tun.iface.Name()),
+		fmt.Sprintf("interface=%s", tun.queue().Name()),
 		fmt.Sprintf("addr=%s", addr),
 		"store=active")
 	tun.log.Debugln("netsh command:", strings.Join(cmd.Args, " "))

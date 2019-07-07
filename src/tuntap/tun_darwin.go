@@ -29,7 +29,7 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 	if err != nil {
 		panic(err)
 	}
-	tun.iface = iface
+	tun.iface = []*water.Interface{iface}
 	tun.mtu = getSupportedMTU(mtu)
 	return tun.setupAddress(addr)
 }
@@ -78,7 +78,7 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 	}
 
 	var ar in6_aliasreq
-	copy(ar.ifra_name[:], tun.iface.Name())
+	copy(ar.ifra_name[:], tun.queue().Name())
 
 	ar.ifra_prefixmask.sin6_len = uint8(unsafe.Sizeof(ar.ifra_prefixmask))
 	b := make([]byte, 16)
@@ -99,7 +99,7 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 	ar.ifra_lifetime.ia6t_pltime = 0xFFFFFFFF
 
 	var ir ifreq
-	copy(ir.ifr_name[:], tun.iface.Name())
+	copy(ir.ifr_name[:], tun.queue().Name())
 	ir.ifru_mtu = uint32(tun.mtu)
 
 	tun.log.Infof("Interface name: %s", ar.ifra_name)

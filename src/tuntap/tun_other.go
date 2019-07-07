@@ -24,7 +24,7 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 	if err != nil {
 		panic(err)
 	}
-	tun.iface = iface
+	tun.iface = []*water.Interface{iface}
 	tun.mtu = getSupportedMTU(mtu)
 	return tun.setupAddress(addr)
 }
@@ -32,6 +32,6 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 // We don't know how to set the IPv6 address on an unknown platform, therefore
 // write about it to stdout and don't try to do anything further.
 func (tun *TunAdapter) setupAddress(addr string) error {
-	tun.log.Warnln("Platform not supported, you must set the address of", tun.iface.Name(), "to", addr)
+	tun.log.Warnln("Platform not supported, you must set the address of", tun.queue().Name(), "to", addr)
 	return nil
 }
