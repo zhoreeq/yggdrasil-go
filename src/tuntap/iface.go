@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"net"
+	"os"
 	"time"
 
 	"github.com/songgao/packets/ethernet"
@@ -21,7 +22,7 @@ func (tun *TunAdapter) writer(q int) error {
 	if queue == nil {
 		return errors.New("invalid queue index")
 	}
-	tun.log.Debugln("Starting TUN/TAP queue", q, "writer")
+	tun.log.Debugln("Starting TUN/TAP queue", q, "writer with FD", queue.ReadWriteCloser.(*os.File).Fd())
 	var w int
 	var err error
 	for {
@@ -127,7 +128,7 @@ func (tun *TunAdapter) reader(q int) error {
 	if queue == nil {
 		return errors.New("invalid queue index")
 	}
-	tun.log.Debugln("Starting TUN/TAP queue", q, "reader")
+	tun.log.Debugln("Starting TUN/TAP queue", q, "reader with FD", queue.ReadWriteCloser.(*os.File).Fd())
 	bs := make([]byte, 65535)
 	for {
 		// Wait for a packet to be delivered to us through the TUN/TAP adapter

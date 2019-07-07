@@ -55,6 +55,7 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 	tun.log.Infof("Interface name: %s", tun.getMainQueue().Name())
 	tun.log.Infof("Interface IPv6: %s", addr)
 	tun.log.Infof("Interface MTU: %d", tun.mtu)
+	tun.log.Infof("Interface queues: %d", tun.queueCount())
 	return tun.setupAddress(addr)
 }
 
