@@ -115,7 +115,7 @@ func (tun *TunAdapter) writer(q int) error {
 			tun.log.Errorln("TUN/TAP iface write mismatch:", w, "bytes written vs", n, "bytes given")
 			continue
 		}
-		tun.log.Traceln("Queue", q, "wrote", n, "bytes to TUN/TAP")
+		//tun.log.Traceln("Queue", q, "wrote", n, "bytes to TUN/TAP")
 	}
 }
 
@@ -141,7 +141,7 @@ func (tun *TunAdapter) reader(q int) error {
 		if n == 0 {
 			continue
 		}
-		tun.log.Traceln("Queue", q, "read", n, "bytes from TUN/TAP")
+		//tun.log.Traceln("Queue", q, "read", n, "bytes from TUN/TAP")
 		// If it's a TAP adapter, update the buffer slice so that we no longer
 		// include the ethernet headers
 		offset := 0
