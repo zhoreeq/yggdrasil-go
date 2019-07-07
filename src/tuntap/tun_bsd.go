@@ -118,13 +118,13 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 	}
 
 	// Friendly output
-	tun.log.Infof("Interface name: %s", tun.iface.Name())
+	tun.log.Infof("Interface name: %s", tun.getMainQueue().Name())
 	tun.log.Infof("Interface IPv6: %s", addr)
 	tun.log.Infof("Interface MTU: %d", tun.mtu)
 
 	// Create the MTU request
 	var ir in6_ifreq_mtu
-	copy(ir.ifr_name[:], tun.iface.Name())
+	copy(ir.ifr_name[:], tun.getMainQueue().Name())
 	ir.ifru_mtu = int(tun.mtu)
 
 	// Set the MTU
@@ -133,7 +133,7 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 		tun.log.Errorf("Error in SIOCSIFMTU: %v", errno)
 
 		// Fall back to ifconfig to set the MTU
-		cmd := exec.Command("ifconfig", tun.iface.Name(), "mtu", string(tun.mtu))
+		cmd := exec.Command("ifconfig", tun.getMainQueue().Name(), "mtu", string(tun.mtu))
 		tun.log.Warnf("Using ifconfig as fallback: %v", strings.Join(cmd.Args, " "))
 		output, err := cmd.CombinedOutput()
 		if err != nil {
@@ -145,7 +145,7 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 	// Create the address request
 	// FIXME: I don't work!
 	var ar in6_ifreq_addr
-	copy(ar.ifr_name[:], tun.iface.Name())
+	copy(ar.ifr_name[:], tun.getMainQueue().Name())
 	ar.ifru_addr.sin6_len = uint8(unsafe.Sizeof(ar.ifru_addr))
 	ar.ifru_addr.sin6_family = unix.AF_INET6
 	parts := strings.Split(strings.Split(addr, "/")[0], ":")
@@ -162,7 +162,7 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 		tun.log.Errorf("Error in SIOCSIFADDR_IN6: %v", errno)
 
 		// Fall back to ifconfig to set the address
-		cmd := exec.Command("ifconfig", tun.iface.Name(), "inet6", addr)
+		cmd := exec.Command("ifconfig", tun.getMainQueue().Name(), "inet6", addr)
 		tun.log.Warnf("Using ifconfig as fallback: %v", strings.Join(cmd.Args, " "))
 		output, err := cmd.CombinedOutput()
 		if err != nil {
