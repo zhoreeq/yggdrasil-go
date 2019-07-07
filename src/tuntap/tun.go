@@ -65,7 +65,7 @@ func getSupportedMTU(mtu int) int {
 // Name returns the name of the adapter, e.g. "tun0". On Windows, this may
 // return a canonical adapter name instead.
 func (tun *TunAdapter) Name() string {
-	return tun.queue().Name()
+	return tun.getMainQueue().Name()
 }
 
 // MTU gets the adapter's MTU. This can range between 1280 and 65535, although
@@ -78,7 +78,7 @@ func (tun *TunAdapter) MTU() int {
 // IsTAP returns true if the adapter is a TAP adapter (Layer 2) or false if it
 // is a TUN adapter (Layer 3).
 func (tun *TunAdapter) IsTAP() bool {
-	return tun.queue().IsTAP()
+	return tun.getMainQueue().IsTAP()
 }
 
 // DefaultName gets the default TUN/TAP interface name for your platform.
@@ -269,11 +269,19 @@ func (tun *TunAdapter) wrap(conn *yggdrasil.Conn) (c *tunConn, err error) {
 	return c, err
 }
 
-func (tun *TunAdapter) queue() *water.Interface {
-	// TODO: is there something better to do than round-robin here? Most calls to
-	// this function are only really administrative things, e.g. during setup or
-	// for the admin socket, but there's a reasonably high chance with this
-	// approach that we might select a queue that is blocking/context switching
+func (tun *TunAdapter) getMainQueue() *water.Interface {
+	if len(tun.iface) == 0 {
+		return nil
+	}
+	return tun.iface[0]
+}
+
+func (tun *TunAdapter) getAnyQueue() *water.Interface {
+	if len(tun.iface) == 0 {
+		return nil
+	}
+	// TODO: Is there something better to do than round-robin here? Most calls to
+	// this function are only really administrative things, e.g. ICMPv6
 	tun.ifacec++
 	return tun.iface[tun.ifacec%len(tun.iface)]
 }

@@ -95,7 +95,7 @@ func (i *ICMPv6) ParsePacket(datain []byte) {
 	}
 
 	// Write the packet to TUN/TAP
-	i.tun.queue().Write(response)
+	i.tun.getAnyQueue().Write(response)
 }
 
 // Unwraps the ethernet headers of an incoming ICMPv6 packet and hands off
@@ -305,7 +305,7 @@ func (i *ICMPv6) Solicit(addr address.Address) {
 		if err != nil {
 			panic(err)
 		}
-		if _, err := i.tun.queue().Write(request); err != nil {
+		if _, err := i.tun.getAnyQueue().Write(request); err != nil {
 			panic(err)
 		}
 		i.tun.log.Debugln("Sent neighbor solicitation for", net.IP(addr[:]).String())

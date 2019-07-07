@@ -52,7 +52,7 @@ func (tun *TunAdapter) setup(ifname string, iftapmode bool, addr string, mtu int
 		}
 	}
 	// Friendly output
-	tun.log.Infof("Interface name: %s", tun.queue().Name())
+	tun.log.Infof("Interface name: %s", tun.getMainQueue().Name())
 	tun.log.Infof("Interface IPv6: %s", addr)
 	tun.log.Infof("Interface MTU: %d", tun.mtu)
 	return tun.setupAddress(addr)
@@ -70,13 +70,13 @@ func (tun *TunAdapter) setupAddress(addr string) error {
 		return err
 	}
 	for _, ifce := range ifces {
-		if ifce.Name == tun.queue().Name() {
+		if ifce.Name == tun.getMainQueue().Name() {
 			var newIF = ifce
 			netIF = &newIF // Don't point inside ifces, it's apparently unsafe?...
 		}
 	}
 	if netIF == nil {
-		return errors.New(fmt.Sprintf("Failed to find interface: %s", tun.queue().Name()))
+		return errors.New(fmt.Sprintf("Failed to find interface: %s", tun.getMainQueue().Name()))
 	}
 	ip, ipNet, err := net.ParseCIDR(addr)
 	if err != nil {
