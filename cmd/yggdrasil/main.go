@@ -25,6 +25,7 @@ import (
 	"github.com/yggdrasil-network/yggdrasil-go/src/admin"
 	"github.com/yggdrasil-network/yggdrasil-go/src/config"
 	"github.com/yggdrasil-network/yggdrasil-go/src/crypto"
+	"github.com/yggdrasil-network/yggdrasil-go/src/meshname"
 	"github.com/yggdrasil-network/yggdrasil-go/src/module"
 	"github.com/yggdrasil-network/yggdrasil-go/src/multicast"
 	"github.com/yggdrasil-network/yggdrasil-go/src/tuntap"
@@ -38,6 +39,7 @@ type node struct {
 	tuntap    module.Module // tuntap.TunAdapter
 	multicast module.Module // multicast.Multicast
 	admin     module.Module // admin.AdminSocket
+	meshname  module.Module // meshname.MeshnameServer
 }
 
 func readConfig(useconf *bool, useconffile *string, normaliseconf *bool) *config.NodeConfig {
@@ -269,6 +271,7 @@ func main() {
 	n.admin = &admin.AdminSocket{}
 	n.multicast = &multicast.Multicast{}
 	n.tuntap = &tuntap.TunAdapter{}
+	n.meshname = &meshname.MeshnameServer{}
 	// Start the admin socket
 	n.admin.Init(&n.core, n.state, logger, nil)
 	if err := n.admin.Start(); err != nil {
@@ -294,6 +297,11 @@ func main() {
 		}
 	} else {
 		logger.Errorln("Unable to get Listener:", err)
+	}
+	// Start the meshnet server
+	n.meshname.Init(&n.core, n.state, logger, nil)
+	if err := n.meshname.Start(); err != nil {
+		logger.Errorln("An error occurred starting meshname:", err)
 	}
 	// Make some nice output that tells us what our IPv6 address and subnet are.
 	// This is just logged to stdout for the user.
@@ -322,6 +330,7 @@ func main() {
 				n.core.UpdateConfig(cfg)
 				n.tuntap.UpdateConfig(cfg)
 				n.multicast.UpdateConfig(cfg)
+				n.meshname.UpdateConfig(cfg)
 			} else {
 				logger.Errorln("Reloading config at runtime is only possible with -useconffile")
 			}
@@ -332,6 +341,7 @@ exit:
 
 func (n *node) shutdown() {
 	n.admin.Stop()
+	n.meshname.Stop()
 	n.multicast.Stop()
 	n.tuntap.Stop()
 	n.core.Stop()

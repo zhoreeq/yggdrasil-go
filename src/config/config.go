@@ -78,6 +78,13 @@ type NodeConfig struct {
 	SwitchOptions               SwitchOptions          `comment:"Advanced options for tuning the switch. Normally you will not need\nto edit these options."`
 	NodeInfoPrivacy             bool                   `comment:"By default, nodeinfo contains some defaults including the platform,\narchitecture and Yggdrasil version. These can help when surveying\nthe network and diagnosing network routing problems. Enabling\nnodeinfo privacy prevents this, so that only items specified in\n\"NodeInfo\" are sent back if specified."`
 	NodeInfo                    map[string]interface{} `comment:"Optional node info. This must be a { \"key\": \"value\", ... } map\nor set as null. This is entirely optional but, if set, is visible\nto the whole network on request."`
+	DNSServer                   DNSServer              `comment:"DNS server description"`
+}
+
+type DNSServer struct {
+	Enable                        bool                `comment:"Enable or disable the DNS server"`
+	Listen                        string              `comment:"Listen address for the DNS server"`
+	Config                        map[string][]string `comment:"DNS zone configuration"`
 }
 
 // SessionFirewall controls the session firewall configuration.
@@ -134,6 +141,10 @@ func GenerateConfig() *NodeConfig {
 	cfg.SessionFirewall.AlwaysAllowOutbound = true
 	cfg.SwitchOptions.MaxTotalQueueSize = 4 * 1024 * 1024
 	cfg.NodeInfoPrivacy = false
+
+	cfg.DNSServer.Enable = false
+	cfg.DNSServer.Listen = "[::1]:53535"
+	cfg.DNSServer.Config = map[string][]string{}
 
 	return &cfg
 }
