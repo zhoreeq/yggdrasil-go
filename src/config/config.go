@@ -82,9 +82,9 @@ type NodeConfig struct {
 }
 
 type DNSServer struct {
-	Enable                        bool                `comment:"Enable or disable the DNS server"`
-	Listen                        string              `comment:"Listen address for the DNS server"`
-	Config                        map[string][]string `comment:"DNS zone configuration"`
+	Enable bool                `comment:"Enable or disable the DNS server"`
+	Listen string              `comment:"Listen address for the DNS server"`
+	Config map[string][]string `comment:"DNS zone configuration"`
 }
 
 // SessionFirewall controls the session firewall configuration.
