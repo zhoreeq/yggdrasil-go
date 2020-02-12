@@ -53,11 +53,11 @@ type MeshnameServer struct {
 	core        *yggdrasil.Core
 	config      *config.NodeState
 	validSubnet *net.IPNet
-	log *log.Logger
-	zoneConfig map[string][]dns.RR
-	dnsClient *dns.Client
-	dnsServer *dns.Server
-	started       bool
+	log         *log.Logger
+	zoneConfig  map[string][]dns.RR
+	dnsClient   *dns.Client
+	dnsServer   *dns.Server
+	started     bool
 }
 
 func (s *MeshnameServer) Init(core *yggdrasil.Core, config *config.NodeState, log *log.Logger, options interface{}) error {
@@ -65,7 +65,7 @@ func (s *MeshnameServer) Init(core *yggdrasil.Core, config *config.NodeState, lo
 	s.config = config
 	s.log = log
 	s.started = false
-	s.validSubnet = &net.IPNet{net.ParseIP("200::"), net.CIDRMask(7,128)}
+	s.validSubnet = &net.IPNet{net.ParseIP("200::"), net.CIDRMask(7, 128)}
 	s.zoneConfig = make(map[string][]dns.RR)
 	if s.dnsClient == nil {
 		s.dnsClient = new(dns.Client)
