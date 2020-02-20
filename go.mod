@@ -8,6 +8,7 @@ require (
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/hjson/hjson-go v3.0.1-0.20190209023717-9147687966d9+incompatible
 	github.com/kardianos/minwinsvc v0.0.0-20151122163309-cad6b2b879b0
+	github.com/miekg/dns v1.1.27
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
 	github.com/songgao/water v0.0.0-20190725173103-fd331bda3f4b // indirect

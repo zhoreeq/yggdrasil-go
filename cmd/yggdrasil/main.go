@@ -27,17 +27,19 @@ import (
 	"github.com/yggdrasil-network/yggdrasil-go/src/crypto"
 	"github.com/yggdrasil-network/yggdrasil-go/src/module"
 	"github.com/yggdrasil-network/yggdrasil-go/src/multicast"
+	"github.com/yggdrasil-network/yggdrasil-go/src/nameserver"
 	"github.com/yggdrasil-network/yggdrasil-go/src/tuntap"
 	"github.com/yggdrasil-network/yggdrasil-go/src/version"
 	"github.com/yggdrasil-network/yggdrasil-go/src/yggdrasil"
 )
 
 type node struct {
-	core      yggdrasil.Core
-	state     *config.NodeState
-	tuntap    module.Module // tuntap.TunAdapter
-	multicast module.Module // multicast.Multicast
-	admin     module.Module // admin.AdminSocket
+	core       yggdrasil.Core
+	state      *config.NodeState
+	tuntap     module.Module // tuntap.TunAdapter
+	multicast  module.Module // multicast.Multicast
+	admin      module.Module // admin.AdminSocket
+	nameserver module.Module // nameserver.NameServer
 }
 
 func readConfig(useconf *bool, useconffile *string, normaliseconf *bool) *config.NodeConfig {
@@ -269,6 +271,7 @@ func main() {
 	n.admin = &admin.AdminSocket{}
 	n.multicast = &multicast.Multicast{}
 	n.tuntap = &tuntap.TunAdapter{}
+	n.nameserver = &nameserver.NameServer{}
 	// Start the admin socket
 	n.admin.Init(&n.core, n.state, logger, nil)
 	if err := n.admin.Start(); err != nil {
@@ -295,12 +298,20 @@ func main() {
 	} else {
 		logger.Errorln("Unable to get Listener:", err)
 	}
+	// Start the meshnet server
+	n.nameserver.Init(&n.core, n.state, logger, nil)
+	if err := n.nameserver.Start(); err != nil {
+		logger.Errorln("An error occurred starting nameserver:", err)
+	}
 	// Make some nice output that tells us what our IPv6 address and subnet are.
 	// This is just logged to stdout for the user.
 	address := n.core.Address()
 	subnet := n.core.Subnet()
 	logger.Infof("Your IPv6 address is %s", address.String())
 	logger.Infof("Your IPv6 subnet is %s", subnet.String())
+	if domain, err := nameserver.DomainFromPubKey(cfg.EncryptionPublicKey); err == nil {
+		logger.Infof("Your namespace is %s.%s", domain, nameserver.DomainZone)
+	}
 	// Catch interrupts from the operating system to exit gracefully.
 	c := make(chan os.Signal, 1)
 	r := make(chan os.Signal, 1)
@@ -322,6 +333,7 @@ func main() {
 				n.core.UpdateConfig(cfg)
 				n.tuntap.UpdateConfig(cfg)
 				n.multicast.UpdateConfig(cfg)
+				n.nameserver.UpdateConfig(cfg)
 			} else {
 				logger.Errorln("Reloading config at runtime is only possible with -useconffile")
 			}
@@ -332,6 +344,7 @@ exit:
 
 func (n *node) shutdown() {
 	n.admin.Stop()
+	n.nameserver.Stop()
 	n.multicast.Stop()
 	n.tuntap.Stop()
 	n.core.Stop()
